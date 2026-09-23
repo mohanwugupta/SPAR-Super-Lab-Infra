@@ -9,7 +9,15 @@ runpodctl update
 runpodctl doctor
 ```
 
-Each person should use their own RunPod credentials. Do not share API keys.
+The lab uses a **shared RunPod API key** so everyone launches compute from the same group account and shared pool of money. Use the key provided privately by the lab and do not commit it to GitHub, paste it into project files, or share it outside the group.
+
+When configuring `runpodctl`, use the shared lab API key:
+
+```bash
+export RUNPOD_API_KEY="<SPAR_SHARED_RUNPOD_API_KEY>"
+```
+
+You can add it to your shell's local secret/environment configuration so you do not need to paste it for every session. Never put the actual key in a repository.
 
 Hugging Face authentication is needed **only for projects that use large HF-hosted datasets/models/artifacts**:
 
