@@ -7,9 +7,9 @@ The goal is to complete one full research loop:
 ```text
 20 prompts
    ↓
-RunPod GPU
+shared model checkpoint
    ↓
-vLLM model server
+RunPod GPU + vLLM
    ↓
 Python experiment
    ↓
@@ -22,30 +22,15 @@ delete GPU
 
 Do this once before starting a real experiment.
 
-## 0. The four concepts you need
+## 0. The five concepts you need
 
-You do not need to understand the infrastructure deeply yet.
-
-- **GitHub** stores the project code and ordinary-sized data.
+- **GitHub** stores project code and ordinary-sized data.
 - **RunPod** rents you a GPU computer.
+- **RunPod Global Volume** stores the lab's shared model pool.
 - **Pixi** installs exactly the software versions the project expects.
-- **vLLM** loads the language model onto the GPU and exposes a local interface that our Python code sends prompts to.
+- **vLLM** loads a model checkpoint onto the GPU and exposes a local API.
 
-A command such as:
-
-```bash
-pixi run experiment
-```
-
-means: "run the project's named `experiment` command inside its reproducible environment."
-
-An environment variable such as:
-
-```bash
-export MODEL=Qwen2.5-1.5B-Instruct
-```
-
-is a temporary setting available to programs launched from that terminal.
+You normally do **not** download a new model for each Pod. You select one from the shared model pool.
 
 ## 1. Know what you normally edit
 
@@ -58,21 +43,17 @@ experiments/
 analysis/
 ```
 
-You usually should **not** need to modify:
+You usually should not need to modify:
 
 ```text
 spar_inference/
 scripts/serve_vllm.sh
-Pixi infrastructure
+shared model infrastructure
 ```
-
-If you think you need to change the shared inference code just to run a normal experiment, ask first.
 
 ## 2. Choose a GPU
 
-For this tutorial, use a cheap GPU with roughly **16–24 GB VRAM**. The included 1.5B model is intentionally small.
-
-A rough starting guide:
+For this tutorial, use a cheap GPU with roughly **16–24 GB VRAM**. The tutorial uses the shared Qwen2.5-1.5B checkpoint.
 
 | Task | Reasonable starting VRAM |
 | --- | ---: |
@@ -82,140 +63,104 @@ A rough starting guide:
 | 30–32B inference | ~48–80 GB or quantization |
 | 70B inference | usually multi-GPU / high-memory |
 | Basic mech interp on a small model | 24–48 GB |
-| Large activation extraction | calculate model + activation requirements first |
 
-This is a rough planning guide, not a guarantee. Context length, batch size, dtype, quantization, and the model architecture all affect memory.
-
-When debugging code, use the **smallest model and cheapest GPU that exercise the code path**.
+This is rough planning guidance, not a guarantee.
 
 ## 3. Launch a RunPod
 
 Use the shared SPAR RunPod account/API key described in [Quickstart](quickstart.md).
 
-Give the Pod a recognizable name, for example:
+For this tutorial, **attach the Global Volume `spar-super-lab-workspace`**. That is where the shared models live.
+
+Give the Pod a recognizable name:
 
 ```text
-mohan-first-experiment
+<your-name>-first-experiment
 ```
 
-For this tutorial, you do not need the Global Volume.
-
-Once the Pod is running, open its web terminal or SSH into it.
-
-Verify the GPU:
+Open a web terminal or SSH in and verify:
 
 ```bash
 nvidia-smi
+ls /workspace/hot-cache/models
 ```
 
-If you see the GPU and its memory, the machine is ready.
+If the models directory does not exist or the tutorial checkpoint is missing, see [Shared model pool](model_pool.md) and ask the infrastructure maintainer before downloading a separate copy.
 
-## 4. Copy the project template
-
-For this tutorial you can work directly from this infrastructure repository:
+## 4. Clone the infrastructure repository
 
 ```bash
 mkdir -p /root/projects
 cd /root/projects
 
 git clone https://github.com/mohanwugupta/SPAR-Super-Lab-Infra.git
-cd SPAR-Super-Lab-Infra/template
+cd SPAR-Super-Lab-Infra
+
+pixi run model-list
+pixi run model-check qwen25_1_5b
+```
+
+This shows whether the tutorial checkpoint is installed and where it lives.
+
+## 5. Enter the project template
+
+```bash
+cd /root/projects/SPAR-Super-Lab-Infra/template
+pixi install
+pixi run test
 ```
 
 The important files are:
 
 ```text
 template/
-├── configs/
-│   └── first_experiment.yaml
-├── data/
-│   └── prompts.csv
-├── experiments/
-│   └── run_first_experiment.py
+├── configs/first_experiment.yaml
+├── data/prompts.csv
+├── experiments/run_first_experiment.py
 ├── spar_inference/
-├── scripts/
-│   └── serve_vllm.sh
+├── scripts/serve_vllm.sh
 └── pixi.toml
 ```
 
-## 5. Install the environment
-
-From `template/`:
-
-```bash
-pixi install
-pixi run test
-```
-
-The first install may take several minutes. Later runs are faster because the environment is cached.
-
-If `pixi run test` passes, the project environment is working.
-
-## 6. Look at the experiment before running it
-
-The input data are in:
-
-```text
-data/prompts.csv
-```
-
-The experimental settings are in:
-
-```text
-configs/first_experiment.yaml
-```
-
-View them:
+## 6. Inspect the experiment
 
 ```bash
 cat data/prompts.csv
 cat configs/first_experiment.yaml
 ```
 
-The configuration controls the system prompt, temperature, token limit, seed, input file, and output directory.
+Changing an experimental variable should usually mean changing a config, not rewriting infrastructure code.
 
-This separation is intentional: **changing an experimental variable should usually mean changing a config, not rewriting infrastructure code.**
+## 7. Start the shared model
 
-## 7. Start the model server
-
-In your first terminal:
-
-```bash
-export SPAR_SCRATCH=/root/scratch
-mkdir -p "$SPAR_SCRATCH"
-
-MODEL=Qwen/Qwen2.5-1.5B-Instruct \
-SERVED_MODEL_NAME=Qwen2.5-1.5B-Instruct \
-pixi run serve
-```
-
-You will see model-loading logs. Wait until vLLM reports that the server is ready.
-
-**Leave this terminal running.** It is now the model server.
-
-## 8. Open a second terminal
-
-Open another web terminal tab or SSH into the same Pod again.
-
-Go back to the template:
+In terminal 1:
 
 ```bash
 cd /root/projects/SPAR-Super-Lab-Infra/template
+
+MODEL=/workspace/hot-cache/models/Qwen--Qwen2.5-1.5B-Instruct \
+SERVED_MODEL_NAME=Qwen2.5-1.5B-Instruct \
+TP=1 \
+pixi run serve
 ```
 
-Confirm that the server responds:
+Wait until vLLM reports that the server is ready. Leave this terminal running.
+
+If loading directly from the Global Volume is a bottleneck, see the optional `model-stage` workflow in [Shared model pool](model_pool.md).
+
+## 8. Run the experiment
+
+Open terminal 2:
 
 ```bash
+cd /root/projects/SPAR-Super-Lab-Infra/template
+
 curl http://localhost:8000/health
-```
 
-If that succeeds, run the experiment:
-
-```bash
 MODEL=Qwen2.5-1.5B-Instruct pixi run experiment
 ```
 
-The experiment will send all 20 prompts to the local vLLM server and save each response as it finishes.
+The first terminal loads the model checkpoint. The second terminal sends prompts to that running model server.
 
 ## 9. Inspect the results
 
@@ -228,84 +173,33 @@ results/first_experiment/
 └── responses.jsonl
 ```
 
-Inspect the first few responses:
+Inspect:
 
 ```bash
 head -n 5 results/first_experiment/responses.jsonl
-```
-
-Inspect the reproducibility metadata:
-
-```bash
 cat results/first_experiment/metadata.json
 ```
 
-The metadata records information such as the Git commit, software versions, GPU, model, and experiment settings.
-
 ## 10. Change exactly one variable
 
-Now make a small scientific manipulation.
-
-For example, change:
-
-```yaml
-system_prompt: "Answer each question in one short sentence."
-```
-
-to:
-
-```yaml
-system_prompt: "Answer each question cautiously and explain uncertainty."
-```
-
-Also change the output directory so the new run does not overwrite the old one:
-
-```yaml
-output_dir: results/first_experiment_cautious
-```
-
-Then rerun:
+Change the system prompt in `configs/first_experiment.yaml`, change the output directory so you do not overwrite the first run, and rerun:
 
 ```bash
 MODEL=Qwen2.5-1.5B-Instruct pixi run experiment
 ```
 
-Compare the two output directories.
+Compare the results.
 
-That is the basic experimental loop: **hold everything fixed, manipulate the variable you care about, and preserve the exact config + metadata for each run.**
+That is the core scientific loop: **hold everything fixed, manipulate the variable you care about, and preserve the exact config + metadata.**
 
 ## 11. Moving to a real project
 
-For a real study, copy the contents of `template/` into its own GitHub repository, then replace:
+For a real study, copy the template into its own GitHub repository and replace the toy data/config/runner.
 
-- `data/prompts.csv` with your project data;
-- `configs/first_experiment.yaml` with your experimental configs;
-- `experiments/run_first_experiment.py` with the project runner.
-
-Keep the shared `spar_inference/` and `scripts/serve_vllm.sh` infrastructure unless the project genuinely requires different behavior.
+For models, choose from the shared catalog rather than hard-coding a new Hugging Face download. See [Shared model pool](model_pool.md).
 
 ## 12. Save your work before deleting the Pod
 
-For ordinary-sized results, commit/push the scientifically useful files to the project's GitHub repository.
+Commit/push scientifically useful ordinary-sized data/results to the project repository. Large artifacts belong on Hugging Face. Temporary high-volume tensors can remain disposable.
 
-Do **not** blindly commit every temporary output. Preserve inputs, frozen configs, important result tables, analysis-ready outputs, and anything needed to reproduce the result.
-
-Large artifacts belong on Hugging Face; high-volume temporary tensors can remain disposable.
-
-Finally, verify that everything worth keeping is off the Pod, then terminate it.
-
-## You are ready for a real experiment when
-
-You can do all of these without guessing:
-
-- launch and identify your RunPod;
-- clone the project;
-- run `pixi install` / `pixi run test`;
-- start vLLM;
-- run the experiment in another terminal;
-- find and inspect the outputs;
-- identify which config changed between two runs;
-- preserve useful results;
-- terminate the GPU.
-
-If one of those steps fails, use [Troubleshooting](troubleshooting.md) before scaling up.
+Verify that everything worth keeping is off local Pod storage, then terminate the Pod.

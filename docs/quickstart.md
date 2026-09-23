@@ -11,22 +11,13 @@ runpodctl update
 runpodctl doctor
 ```
 
-The lab uses a **shared RunPod API key** so everyone launches compute from the same group account and shared pool of money. Use the key provided privately by the lab and do not commit it to GitHub, paste it into project files, or share it outside the group.
-
-When configuring `runpodctl`, use the shared lab API key:
+The lab uses a **shared RunPod API key** so everyone launches compute from the same group account and shared pool of money. Use the key provided privately by the lab and never commit it to GitHub or share it outside the group.
 
 ```bash
 export RUNPOD_API_KEY="<SPAR_SHARED_RUNPOD_API_KEY>"
 ```
 
-You can add it to your shell's local secret/environment configuration so you do not need to paste it for every session. Never put the actual key in a repository.
-
-Hugging Face authentication is needed **only for projects that use large HF-hosted datasets/models/artifacts**:
-
-```bash
-hf auth login
-hf auth whoami
-```
+Hugging Face authentication is needed only for projects that access gated HF assets or for maintainers adding models to the shared pool.
 
 ## Start a GPU
 
@@ -36,57 +27,73 @@ runpodctl datacenter list
 runpodctl pod list
 ```
 
-Deploy the shared SPAR template, request **one inexpensive appropriate GPU**, and name the Pod:
+Deploy the shared SPAR template, request an appropriate GPU, and name the Pod:
 
 ```text
 <person>-<project>-<purpose>
 ```
 
-Attach `spar-super-lab-workspace` only when the project benefits from the shared hot cache/staging layer.
+**Attach `spar-super-lab-workspace` for normal model-based experiments**, because the shared model pool lives on that persistent volume.
 
-## Work on the Pod
+## Find a model
 
-Most projects should start simply by cloning their GitHub repository:
+Clone or update this infrastructure repo:
+
+```bash
+cd /root/projects
+git clone https://github.com/mohanwugupta/SPAR-Super-Lab-Infra.git
+cd SPAR-Super-Lab-Infra
+
+pixi run model-list
+```
+
+The model weights normally live under:
+
+```text
+/workspace/hot-cache/models/
+```
+
+See [Shared model pool](model_pool.md).
+
+## Work on your project
+
+Clone the project repository onto local Pod storage:
 
 ```bash
 mkdir -p /root/projects /root/scratch
 export SPAR_SCRATCH=/root/scratch
-export HF_HOME="$SPAR_SCRATCH/hf"
 
 cd /root/projects
-git clone <REPO_URL>
-cd <REPO>
-
+git clone <PROJECT_REPO_URL>
+cd <PROJECT_REPO>
 pixi run --locked test
-pixi run --locked <project-task>
 ```
 
-If the project's dataset is in the GitHub repository, that is all you need.
-
-If the project has a large Hugging Face dataset/artifact:
+Start an installed shared model, for example:
 
 ```bash
-hf download SPAR-Super-Lab/<dataset-repo> \
-  --repo-type dataset \
-  --local-dir /root/scratch/data
+MODEL=/workspace/hot-cache/models/Qwen--Qwen2.5-7B-Instruct \
+SERVED_MODEL_NAME=Qwen2.5-7B-Instruct \
+pixi run serve
 ```
 
-For the starter inference stack:
+Then in a second terminal:
 
 ```bash
-MODEL=<served-model-name> pixi run inference-smoke
+cd /root/projects/<PROJECT_REPO>
+MODEL=Qwen2.5-7B-Instruct pixi run experiment
 ```
 
 ## Storage rule
 
 - **GitHub:** code/configs/docs + ordinary-sized datasets/results
-- **Hugging Face:** large datasets/models/activation artifacts
-- **Global Volume:** optional hot cache/staging
-- **Pod-local disk:** caches, activations, temporary shards, fast scratch
+- **Hugging Face:** large datasets/artifacts and upstream model source
+- **Global Volume:** shared model pool + optional hot cache/staging
+- **Pod-local disk:** project checkout, activations, caches, temporary shards
 
 ## Finish
 
-Persist anything scientifically important to its canonical GitHub/Hugging Face location, then delete the Pod:
+Persist anything scientifically important to GitHub/Hugging Face, then delete the Pod:
 
 ```bash
 runpodctl pod list

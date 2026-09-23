@@ -1,0 +1,19 @@
+[workspace]
+name = "spar-super-lab-infra"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[dependencies]
+python = ">=3.11,<3.13"
+git = "*"
+
+[pypi-dependencies]
+pyyaml = ">=6.0"
+huggingface_hub = ">=0.34,<1.0"
+
+[tasks]
+model-list = "python scripts/model_pool.py list"
+model-check = "python scripts/model_pool.py check"
+model-path = "python scripts/model_pool.py path"
+model-download = "python scripts/model_pool.py download"
+model-stage = "python scripts/model_pool.py stage"

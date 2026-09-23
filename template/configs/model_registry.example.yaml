@@ -1,21 +1,30 @@
+# Example excerpt from the canonical lab model registry.
+#
+# The authoritative catalog is maintained in:
+#   SPAR-Super-Lab-Infra/configs/model_registry.yaml
+#
+# Prefer using the shared_path rather than downloading a duplicate model into
+# every Pod.
+
 models:
-  - slug: qwen25_05b
-    repo_id: Qwen/Qwen2.5-0.5B-Instruct
+  qwen25_1_5b:
+    repo_id: Qwen/Qwen2.5-1.5B-Instruct
     revision: main
+    local_dir_name: Qwen--Qwen2.5-1.5B-Instruct
+    shared_path: /workspace/hot-cache/models/Qwen--Qwen2.5-1.5B-Instruct
+    served_model_name: Qwen2.5-1.5B-Instruct
     tensor_parallel_size: 1
     gpus: 1
+    min_vram_gb: 16
     max_model_len: 8192
 
-  - slug: qwen25_7b
+  qwen25_7b:
     repo_id: Qwen/Qwen2.5-7B-Instruct
     revision: main
+    local_dir_name: Qwen--Qwen2.5-7B-Instruct
+    shared_path: /workspace/hot-cache/models/Qwen--Qwen2.5-7B-Instruct
+    served_model_name: Qwen2.5-7B-Instruct
     tensor_parallel_size: 1
     gpus: 1
-    max_model_len: 8192
-
-  - slug: deepseek_r1_distill_qwen_32b
-    repo_id: deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
-    revision: main
-    tensor_parallel_size: 1
-    gpus: 1
+    min_vram_gb: 24
     max_model_len: 8192
