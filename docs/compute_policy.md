@@ -29,5 +29,3 @@ runpodctl pod list
 ```
 
 If a Pod is not doing useful work, persist important outputs and delete it.
-
-Do not preload the entire grant into RunPod. Keep a smaller prepaid balance with low-balance alerts and review spending weekly.
