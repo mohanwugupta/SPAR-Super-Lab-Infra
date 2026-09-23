@@ -10,7 +10,7 @@
 
 ## Ask in Slack first when
 
-- expected compute cost is over about **$25**;
+- expected compute cost is over about **$100**;
 - requesting **4+ GPUs**;
 - using H100/H200/B200-class GPUs when cheaper cards may suffice;
 - running longer than **24 hours**;
