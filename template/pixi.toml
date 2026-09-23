@@ -12,6 +12,7 @@ curl = "*"
 [pypi-dependencies]
 openai = ">=1.0"
 pyyaml = ">=6.0"
+huggingface_hub = ">=0.34,<1.0"
 transformers = "==4.57.6"
 vllm = "==0.19.0"
 pytest = ">=8"
@@ -23,3 +24,7 @@ lint = "ruff check ."
 serve = "bash scripts/serve_vllm.sh"
 inference-smoke = "python examples/inference_smoke.py"
 mechinterp-smoke = "python examples/mech_interp_smoke.py"
+
+# Add project-specific tasks after creating the corresponding HF repos, e.g.:
+# data-pull = "hf download SPAR-Super-Lab/my-data --repo-type dataset --local-dir /root/scratch/data"
+# results-push = "hf upload SPAR-Super-Lab/my-artifacts /root/scratch/final-results results/latest --repo-type dataset"

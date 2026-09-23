@@ -14,19 +14,24 @@ tests/
 
 ## Normal loop
 
-1. Create a branch.
-2. Check in the experimental config.
-3. Run tests/smoke tests.
-4. Run a small pilot.
-5. Record metadata + Git commit.
-6. Write outputs to a run-specific directory.
-7. Inspect results.
-8. Scale only after the pilot works.
-9. Merge by pull request.
+1. Create a Git branch.
+2. Define the experimental config.
+3. Pin or record the Hugging Face dataset/artifact revision.
+4. Pull required data to local Pod scratch.
+5. Run tests/smoke tests.
+6. Run a small pilot.
+7. Record metadata + Git commit.
+8. Write working outputs to a run-specific local directory.
+9. Inspect results.
+10. Upload durable/reusable outputs to Hugging Face.
+11. Record the resulting Hub revision.
+12. Scale only after the pilot works.
+13. Merge code by pull request.
 
 ## Every important run should record
 
 - model/checkpoint + revision;
+- dataset/artifact Hugging Face repo + revision;
 - tokenizer revision;
 - inference backend + version;
 - Transformers/PyTorch versions;
@@ -55,4 +60,12 @@ results/
 
 Do not have multiple Pods overwrite one shared output file.
 
-The same code path that runs 20 examples should run 200,000 examples; scaling should mostly be a config change.
+## Sources of truth
+
+```text
+GitHub       -> code/configuration
+Hugging Face -> datasets + durable ML artifacts
+RunPod       -> disposable compute + working storage
+```
+
+A production run should be a configuration change, not a rewritten script. The same code path that runs 20 examples should run 200,000 examples.

@@ -41,6 +41,16 @@ pixi run --locked serve
 pixi run --locked inference-smoke
 ```
 
+Project-specific repos can also expose data workflows as tasks:
+
+```toml
+[tasks]
+data-pull = "hf download SPAR-Super-Lab/my-data --repo-type dataset --local-dir /root/scratch/data"
+results-push = "hf upload SPAR-Super-Lab/my-artifacts /root/scratch/final-results results/latest --repo-type dataset"
+```
+
+For frozen experiments, prefer a pull command/config that pins the exact Hugging Face revision rather than always taking the latest `main`.
+
 ## Why per-project environments
 
 Different projects may require incompatible versions of vLLM, Transformers, TransformerLens, NNsight, SAE tooling, or CUDA-adjacent packages. Keeping dependencies project-local prevents one project's upgrade from breaking another.
