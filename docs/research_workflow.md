@@ -7,8 +7,10 @@ README.md
 pixi.toml
 pixi.lock
 configs/
+data/          # when project data fit comfortably in Git
 src/ or project modules
 experiments/
+analysis/
 tests/
 ```
 
@@ -16,22 +18,26 @@ tests/
 
 1. Create a Git branch.
 2. Define the experimental config.
-3. Pin or record the Hugging Face dataset/artifact revision.
-4. Pull required data to local Pod scratch.
+3. Identify the canonical data source:
+   - GitHub commit/path for ordinary-sized project data; or
+   - Hugging Face repo/revision for large ML artifacts.
+4. Clone/pull the required inputs onto the Pod.
 5. Run tests/smoke tests.
 6. Run a small pilot.
 7. Record metadata + Git commit.
 8. Write working outputs to a run-specific local directory.
 9. Inspect results.
-10. Upload durable/reusable outputs to Hugging Face.
-11. Record the resulting Hub revision.
-12. Scale only after the pilot works.
-13. Merge code by pull request.
+10. Persist durable outputs:
+    - GitHub for ordinary-sized project results/data;
+    - Hugging Face for large artifacts.
+11. Scale only after the pilot works.
+12. Merge code by pull request.
 
 ## Every important run should record
 
+- code Git commit;
+- dataset source + exact revision;
 - model/checkpoint + revision;
-- dataset/artifact Hugging Face repo + revision;
 - tokenizer revision;
 - inference backend + version;
 - Transformers/PyTorch versions;
@@ -39,9 +45,25 @@ tests/
 - generation parameters;
 - seed;
 - GPU model;
-- Git commit;
 - experiment config;
 - timestamp.
+
+```yaml
+dataset:
+  source: github
+  repo: SPAR-Super-Lab/task-selection
+  revision: <GIT_SHA>
+  path: data/items.parquet
+```
+
+or:
+
+```yaml
+dataset:
+  source: huggingface
+  repo_id: SPAR-Super-Lab/preferences-activations
+  revision: <HF_SHA>
+```
 
 The starter `spar_inference.metadata` helper records much of the runtime automatically.
 
@@ -54,7 +76,7 @@ results/
   2026-09-23_qwen25-7b_prompt-v4_seed0/
     config.yaml
     metadata.json
-    responses.jsonl
+    responses.parquet
     summary.csv
 ```
 
@@ -63,8 +85,8 @@ Do not have multiple Pods overwrite one shared output file.
 ## Sources of truth
 
 ```text
-GitHub       -> code/configuration
-Hugging Face -> datasets + durable ML artifacts
+GitHub       -> code/configuration + ordinary-sized datasets/results
+Hugging Face -> large datasets + durable ML artifacts
 RunPod       -> disposable compute + working storage
 ```
 

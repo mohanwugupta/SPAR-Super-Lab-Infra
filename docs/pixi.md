@@ -41,7 +41,9 @@ pixi run --locked serve
 pixi run --locked inference-smoke
 ```
 
-Project-specific repos can also expose data workflows as tasks:
+If project data live directly in the GitHub repository, no extra data-pull task is necessary.
+
+For projects with large Hugging Face-hosted artifacts, expose the transfer as a project-specific task:
 
 ```toml
 [tasks]
@@ -49,7 +51,7 @@ data-pull = "hf download SPAR-Super-Lab/my-data --repo-type dataset --local-dir 
 results-push = "hf upload SPAR-Super-Lab/my-artifacts /root/scratch/final-results results/latest --repo-type dataset"
 ```
 
-For frozen experiments, prefer a pull command/config that pins the exact Hugging Face revision rather than always taking the latest `main`.
+For frozen experiments, pin exact Git/Hugging Face revisions rather than implicitly using the latest version.
 
 ## Why per-project environments
 

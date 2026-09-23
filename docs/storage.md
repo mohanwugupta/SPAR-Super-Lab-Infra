@@ -1,83 +1,74 @@
 # Storage
 
-The lab uses a four-layer storage model. **GitHub and Hugging Face are the durable sources of truth; RunPod storage is operational infrastructure.**
+The lab uses a **GitHub-first durable storage policy**, with Hugging Face for larger ML artifacts and RunPod for compute/working storage.
 
 ```text
-GitHub                         Hugging Face Hub
-code/configs/docs              canonical data/artifacts
-        \                       /
-         \                     /
-          -----> RunPod Pod <---
-                 |
-                 | local fast scratch
-                 v
-            experiment
-                 |
-                 v
-       durable outputs -> Hugging Face
+                      DURABLE
+          GitHub                    Hugging Face
+ code/configs/docs/data/results     large datasets/models/activations
+              \                     /
+               \                   /
+                ----> RunPod Pod <---
+                      |
+                      | fast local scratch
+                      v
+                   experiment
 
-RunPod Global Volume = optional hot cache/staging layer
+RunPod Global Volume = optional hot cache / staging layer
 ```
 
-## 1. GitHub: code and experiment definitions
+## 1. GitHub: default source of truth
+
+GitHub is preferred when the project's durable data fit comfortably in Git.
 
 Store:
 - source code;
 - configs;
 - Pixi manifests/lockfiles;
 - prompts;
-- docs;
-- small fixtures.
+- documentation;
+- benchmark inputs;
+- small/medium processed datasets;
+- generated behavioral results;
+- analysis-ready tables;
+- publication data.
 
-Do not use GitHub for model weights, activation dumps, or large generated datasets.
+This has a major long-term advantage: after the fellowship, the project remains self-contained without paying for RunPod storage.
 
-## 2. Hugging Face: canonical data and artifacts
+See [GitHub data conventions](github_data.md).
 
-Hugging Face is the default durable home for:
-- datasets;
-- generated-response datasets;
-- reusable activation datasets;
-- adapters/model artifacts;
-- important reusable checkpoints;
-- final artifacts that should survive a compute-provider change.
+## 2. Hugging Face: large / ML-specific durable artifacts
 
-Prefer one repository per project/artifact family, and record the exact Hub commit SHA used by important experiments.
+Use Hugging Face when GitHub becomes awkward, especially for:
+- multi-GB datasets;
+- model weights/adapters;
+- large activation datasets;
+- large generated datasets;
+- reusable ML artifacts.
 
-See [Hugging Face setup](huggingface.md).
+A practical rule of thumb:
 
-## 3. RunPod Global Volume: hot cache / staging
+```text
+< ~1 GB      GitHub by default
+~1-10 GB     decide based on churn/format/use
+> ~10 GB     usually Hugging Face
+```
+
+These are operational heuristics rather than hard platform limits.
+
+See [Hugging Face](huggingface.md).
+
+## 3. RunPod Global Volume: optional hot cache / staging
 
 The Global Volume `spar-super-lab-workspace` is **not the canonical lab filesystem**.
 
-Use it selectively for things that are expensive to repeatedly transfer between Pods, for example:
-
-```text
-/workspace/
-  hot-cache/
-    models/
-    datasets/
-  staging/
-  cross-pod/
-```
-
-A useful pattern for a frequently reused large model is:
-
-```text
-Hugging Face (canonical)
-        |
-        v
-Global Volume hot copy
-        |
-        v
-copy/stage to Pod-local disk
-        |
-        v
-run inference
-```
+Use it selectively for:
+- a hot copy of a large model repeatedly loaded by multiple Pods;
+- a dataset repeatedly reused across short-lived Pods;
+- temporary cross-Pod handoff;
+- staging before upload to GitHub/Hugging Face.
 
 Do not rely on the Global Volume as the only copy of scientifically important data.
-
-Do not treat it as a POSIX parallel scratch filesystem; avoid concurrent writers to the same file and high-frequency small-file I/O.
 
 ## 4. Pod-local disk: fast disposable scratch
 
@@ -88,6 +79,7 @@ mkdir -p "$SPAR_SCRATCH" "$HF_HOME"
 ```
 
 Use local disk for:
+- cloned Git repositories;
 - Hugging Face/vLLM caches;
 - temporary activations;
 - intermediate shards;
@@ -95,19 +87,29 @@ Use local disk for:
 - extracted hidden states;
 - current experiment working files.
 
-Example:
+## Common case: everything fits in GitHub
 
 ```bash
-# Pull a durable dataset to local scratch
-hf download SPAR-Super-Lab/my-project-data \
+git clone <PROJECT_REPO>
+cd <PROJECT_REPO>
+pixi run --locked experiment
+```
+
+No Hugging Face or Global Volume is required.
+
+## Large-artifact case
+
+```bash
+git clone <PROJECT_REPO>
+cd <PROJECT_REPO>
+
+hf download SPAR-Super-Lab/<large-data-repo> \
   --repo-type dataset \
   --local-dir /root/scratch/data
 
-# High-I/O work remains local
-pixi run extract-activations --output /root/scratch/acts
+pixi run --locked experiment
 
-# Upload only useful durable outputs
-hf upload SPAR-Super-Lab/my-project-artifacts \
+hf upload SPAR-Super-Lab/<artifact-repo> \
   /root/scratch/final-results \
   results/run-001 \
   --repo-type dataset
@@ -115,6 +117,6 @@ hf upload SPAR-Super-Lab/my-project-artifacts \
 
 ## Failure rule
 
-Assume everything on local Pod storage can disappear when the Pod is deleted.
+Assume everything unique on RunPod can disappear.
 
-If an artifact matters scientifically, it should end up in **Hugging Face or GitHub**, not only on RunPod.
+If an artifact matters scientifically, its canonical copy should eventually live in **GitHub or Hugging Face**, not only on RunPod.

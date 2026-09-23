@@ -25,6 +25,9 @@ serve = "bash scripts/serve_vllm.sh"
 inference-smoke = "python examples/inference_smoke.py"
 mechinterp-smoke = "python examples/mech_interp_smoke.py"
 
-# Add project-specific tasks after creating the corresponding HF repos, e.g.:
+# Most projects need no data transfer task: ordinary-sized data can live
+# directly in the project GitHub repository.
+#
+# For large Hugging Face artifacts, add project-specific tasks, e.g.:
 # data-pull = "hf download SPAR-Super-Lab/my-data --repo-type dataset --local-dir /root/scratch/data"
 # results-push = "hf upload SPAR-Super-Lab/my-artifacts /root/scratch/final-results results/latest --repo-type dataset"
