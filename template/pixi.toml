@@ -22,6 +22,7 @@ ruff = ">=0.8"
 test = "pytest -q"
 lint = "ruff check ."
 serve = "bash scripts/serve_vllm.sh"
+experiment = "python experiments/run_first_experiment.py"
 inference-smoke = "python examples/inference_smoke.py"
 mechinterp-smoke = "python examples/mech_interp_smoke.py"
 

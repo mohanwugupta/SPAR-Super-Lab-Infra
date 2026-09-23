@@ -1,0 +1,12 @@
+# Minimal behavioral experiment used by docs/first_experiment.md
+system_prompt: "Answer each question in one short sentence."
+
+generation:
+  temperature: 0.0
+  max_tokens: 64
+  top_p: 1.0
+  seed: 0
+  repetition_penalty: 1.05
+
+input_file: data/prompts.csv
+output_dir: results/first_experiment

@@ -18,19 +18,21 @@ The reusable inference pieces here were extracted from [PromptControlText](https
 
 ## New mentee?
 
-Read these in order:
+If this infrastructure is new to you, use the docs in this order:
 
 1. [5-minute quickstart](docs/quickstart.md)
-2. [RunPod](docs/runpod.md)
-3. [GitHub data conventions](docs/github_data.md)
-4. [Hugging Face for large ML artifacts](docs/huggingface.md)
-5. [Pixi](docs/pixi.md)
-6. [Storage](docs/storage.md)
-7. [Research workflow](docs/research_workflow.md)
-8. [Compute policy](docs/compute_policy.md)
-9. [Mechanistic interpretability](docs/mech_interp.md)
+2. **[Build your first experiment](docs/first_experiment.md)** — the beginner end-to-end tutorial
+3. [RunPod](docs/runpod.md)
+4. [GitHub data conventions](docs/github_data.md)
+5. [Hugging Face for large ML artifacts](docs/huggingface.md)
+6. [Pixi](docs/pixi.md)
+7. [Storage](docs/storage.md)
+8. [Research workflow](docs/research_workflow.md)
+9. [Compute policy](docs/compute_policy.md)
+10. [Mechanistic interpretability](docs/mech_interp.md)
+11. [Troubleshooting](docs/troubleshooting.md)
 
-The [template](template/) directory is a starter project that can be copied into a new research repository.
+The [template](template/) directory is a starter project that can be copied into a new research repository. It includes a complete toy experiment that can be run on RunPod before modifying anything for a real project.
 
 ## Design principle
 

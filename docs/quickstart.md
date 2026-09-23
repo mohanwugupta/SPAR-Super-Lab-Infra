@@ -1,5 +1,7 @@
 # 5-minute quickstart
 
+> **New to RunPod/Pixi/vLLM?** Follow [Build your first experiment](first_experiment.md) once before using this page as a reference.
+
 ## One-time local setup
 
 ```bash
