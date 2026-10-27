@@ -52,3 +52,14 @@ models:
     min_vram_gb: 160
     max_model_len: 8192
     gated: true
+
+  llama31_8b_unsloth:
+    repo_id: unsloth/Llama-3.1-8B-Instruct
+    revision: 4699cc75b550f9c6f3173fb80f4703b62d946aa5
+    local_dir_name: unsloth--Llama-3.1-8B-Instruct
+    shared_path: /workspace/hot-cache/models/unsloth--Llama-3.1-8B-Instruct
+    served_model_name: Llama-3.1-8B-Instruct
+    tensor_parallel_size: 1
+    gpus: 1
+    min_vram_gb: 24
+    max_model_len: 8192
